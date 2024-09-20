@@ -10,14 +10,14 @@ enum IrOutputState {
 #[derive(Debug)]
 struct IrGenState {
     output: IrOutputState,
-    duration: f64,
+    duration: u64,
 }
 
 impl IrGenState {
     fn default() -> IrGenState {
         IrGenState {
             output: IrOutputState::IrHigh,
-            duration: 0.0,
+            duration: 0,
         }
     }
 
@@ -25,11 +25,11 @@ impl IrGenState {
         print!("{},", self.duration as u32);
     }
 
-    fn ir_high(&mut self, us: f64) {
+    fn ir_high(&mut self, us: u64) {
         self.ir_low_or_high(us, IrOutputState::IrHigh);
     }
 
-    fn ir_low(&mut self, us: f64) {
+    fn ir_low(&mut self, us: u64) {
         self.ir_low_or_high(us, IrOutputState::IrLow);
     }
 
@@ -37,7 +37,7 @@ impl IrGenState {
         print!("{}", self.duration as u32);
     }
 
-    fn ir_low_or_high(&mut self, us: f64, output: IrOutputState) {
+    fn ir_low_or_high(&mut self, us: u64, output: IrOutputState) {
         if self.output == output {
             self.duration += us;
         } else {
@@ -49,18 +49,18 @@ impl IrGenState {
 }
 
 fn code_lead(state: &mut IrGenState) {
-    state.ir_high(4400.0);
-    state.ir_low(4400.0);
+    state.ir_high(4400);
+    state.ir_low(4400);
 }
 
 fn code_one(state: &mut IrGenState) {
-    state.ir_high(540.0);
-    state.ir_low(1620.0);
+    state.ir_high(540);
+    state.ir_low(1620);
 }
 
 fn code_zero(state: &mut IrGenState) {
-    state.ir_high(540.0);
-    state.ir_low(540.0);
+    state.ir_high(540);
+    state.ir_low(540);
 }
 
 fn code_byte(state: &mut IrGenState, byte: u8) {
@@ -74,8 +74,8 @@ fn code_byte(state: &mut IrGenState, byte: u8) {
 }
 
 fn code_stop(state: &mut IrGenState) {
-    state.ir_high(540.0);
-    state.ir_low(5220.0);
+    state.ir_high(540);
+    state.ir_low(5220);
 }
 
 fn code_pair(state: &mut IrGenState, byte: u8) {
