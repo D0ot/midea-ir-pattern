@@ -1,3 +1,6 @@
+// Generate IR Pattern for Android IR API
+// I use it in Termux-API
+
 #[derive(PartialEq, Debug)]
 enum IrOutputState {
     IrHigh, // means sender otuput level is high, so the receiver is low.
