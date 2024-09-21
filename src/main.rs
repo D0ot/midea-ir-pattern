@@ -1,5 +1,6 @@
 // Generate IR Pattern for Android IR API
 // I use it in Termux-API
+// The leaded Media R05D Design https://wenku.baidu.com/view/c46594141ed9ad51f01df2c3.html
 
 #[derive(PartialEq, Debug)]
 enum IrOutputState {
@@ -83,7 +84,7 @@ fn code_pair(state: &mut IrGenState, byte: u8) {
     code_byte(state, !byte);
 }
 
-fn midea_gen_abc(state: &mut IrGenState, a: u8, b: u8, c: u8) {
+fn midea_gen_abc(state: &mut IrGenState, a: u8, b: u8, c: u8, stop: bool) {
     code_lead(state);
     code_pair(state, a);
     code_pair(state, b);
@@ -94,6 +95,18 @@ fn midea_gen_abc(state: &mut IrGenState, a: u8, b: u8, c: u8) {
     code_pair(state, a);
     code_pair(state, b);
     code_pair(state, c);
+
+    if stop { state.ir_end(); }
+}
+
+fn midea_gen_off(state: &mut IrGenState) {
+    midea_gen_abc(state, 0xB2, 0b0111_1011, 0b1110_0000, false);
+
+    code_stop(state);
+    code_lead(state);
+    code_pair(state, 0xB2);
+    code_pair(state, 0);
+    code_pair(state, 0);
 
     state.ir_end();
 }
@@ -126,13 +139,22 @@ impl MideaTemp {
     }
 }
 
-fn bin_to_grey(bin: u8) -> u8{
+fn bin_to_grey(bin: u8) -> u8 {
     (bin >> 1) ^ bin
 }
 
-fn midea_ac_pattern(mode: MideaMode, speed: MideaSpeed, temp: MideaTemp) {
+fn midea_ac_pattern(on: bool, mode: MideaMode, speed: MideaSpeed, temp: MideaTemp) {
+    let mut state = IrGenState::default();
+
+    if !on {
+        midea_gen_off(&mut state);
+        return;
+    }
+
     let mut b = 0b11111;
     let mut c = 0;
+
+    //b |= (on as u8) << 3;
 
     match speed {
         MideaSpeed::Auto => b |= 0b101_00000,
@@ -150,14 +172,22 @@ fn midea_ac_pattern(mode: MideaMode, speed: MideaSpeed, temp: MideaTemp) {
 
     c |= (bin_to_grey(temp.temp - 17)) << 4;
 
-    let mut state = IrGenState::default();
-    midea_gen_abc(&mut state, 0xB2, b, c);
+    midea_gen_abc(&mut state, 0xB2, b, c, true);
 }
 
 fn main() {
-    let temp_str = std::env::args().nth(1).expect("Give the Temperature");
+    let temp_str = std::env::args().nth(2).expect("2nd positional arg: Temperature");
     let temp_raw: u8 = temp_str.trim().parse().expect("Temperature is not a positive integer");
 
-    midea_ac_pattern(MideaMode::Cool, MideaSpeed::Auto, MideaTemp::new(temp_raw));
+    let ac_on_str = std::env::args().nth(1).expect("1st positional arg: ON/on/On/Off/OFF/off/0/1");
+    let ac_on;
+
+    match ac_on_str.as_str() {
+        "ON" | "on" | "On" | "1" => ac_on = true,
+        "OFF" | "off" | "Off" | "0" => ac_on = false,
+        _ => panic!(),
+    }
+
+    midea_ac_pattern(ac_on ,MideaMode::Cool, MideaSpeed::Auto, MideaTemp::new(temp_raw));
 
 }
